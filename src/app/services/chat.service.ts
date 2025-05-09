@@ -2,6 +2,13 @@ import { Injectable } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { Observable, Subject } from 'rxjs';
 
+interface ChatMessage {
+  id?: string;
+  user: string;
+  text: string;
+  timestamp: number;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -9,11 +16,14 @@ export class ChatService {
   private socket!: Socket;
   private readonly SERVER_URL = 'http://localhost:3000';
   private connectionStatus = new Subject<boolean>();
-  private messagesSubject = new Subject<any>();
+  private messagesSubject = new Subject<ChatMessage>();
   private systemMessagesSubject = new Subject<string>();
   private usersListSubject = new Subject<string[]>();
   private currentRoom: string = '';
   private currentUser: string = '';
+
+  // Cache to prevent duplicate messages
+  private processedMessageIds = new Set<string>();
 
   constructor() {
     this.setupSocketConnection();
@@ -54,31 +64,69 @@ export class ChatService {
       this.connectionStatus.next(false);
     });
 
-    // Set up message listeners
-    this.socket.on('message', (msg) => {
+    // Single handler for all message events
+    this.setupMessageHandlers();
+  }
+
+  private setupMessageHandlers() {
+    // Process both 'message' and 'chat message' events with the same handler to avoid duplicates
+    const messageHandler = (msg: any) => {
       console.log('Received message:', msg);
-      this.messagesSubject.next(msg);
-    });
+      let messageObj: ChatMessage;
 
-    this.socket.on('chat message', (msg) => {
-      console.log('Received chat message:', msg);
-      this.messagesSubject.next(msg);
-    });
+      // Handle string messages (convert to object)
+      if (typeof msg === 'string') {
+        messageObj = {
+          text: msg,
+          user: 'Unknown',
+          timestamp: Date.now(),
+        };
+      } else {
+        messageObj = msg;
+      }
 
+      // Ensure the message has an ID
+      const messageId =
+        messageObj.id ||
+        `${messageObj.user}-${messageObj.timestamp || Date.now()}`;
+
+      // Skip if we've already processed this message
+      if (this.processedMessageIds.has(messageId)) {
+        console.log('Skipping duplicate message:', messageId);
+        return;
+      }
+
+      // Add to processed messages
+      this.processedMessageIds.add(messageId);
+
+      // Limit cache size to prevent memory leaks
+      if (this.processedMessageIds.size > 200) {
+        const oldestId = Array.from(this.processedMessageIds)[0];
+        this.processedMessageIds.delete(oldestId);
+      }
+
+      // Forward to subscribers
+      this.messagesSubject.next(messageObj);
+    };
+
+    // Apply the handler to both event types
+    this.socket.on('message', messageHandler);
+    this.socket.on('chat message', messageHandler);
+
+    // System messages
     this.socket.on('system message', (msg) => {
       console.log('Received system message:', msg);
       this.systemMessagesSubject.next(msg);
     });
 
-    this.socket.on('user list', (users) => {
-      console.log('Received user list:', users);
-      this.usersListSubject.next(users);
-    });
-
-    this.socket.on('users', (users) => {
+    // User lists (handle both event types)
+    const userHandler = (users: string[]) => {
       console.log('Received users update:', users);
       this.usersListSubject.next(users);
-    });
+    };
+
+    this.socket.on('user list', userHandler);
+    this.socket.on('users', userHandler);
   }
 
   // Force reconnection if needed
@@ -110,6 +158,9 @@ export class ChatService {
       this.socket.connect();
     }
 
+    // Clear message cache when joining a new room
+    this.processedMessageIds.clear();
+
     // Try both event formats
     this.socket.emit('join room', { nickname, room });
     this.socket.emit('join', { username: nickname, room });
@@ -118,16 +169,24 @@ export class ChatService {
   sendMessage(message: string) {
     console.log('Sending message:', message);
 
+    const timestamp = Date.now();
+    const messageId = `${this.currentUser}-${timestamp}`;
+
+    // Add to processed messages to prevent echo
+    this.processedMessageIds.add(messageId);
+
     // Try both event formats
     this.socket.emit('chat message', message);
     this.socket.emit('message', {
+      id: messageId,
       text: message,
-      username: this.currentUser,
-      timestamp: new Date(),
+      user: this.currentUser,
+      username: this.currentUser, // For compatibility
+      timestamp: timestamp,
     });
   }
 
-  getMessages(): Observable<any> {
+  getMessages(): Observable<ChatMessage> {
     return this.messagesSubject.asObservable();
   }
 

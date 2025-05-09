@@ -7,7 +7,25 @@
   <div *ngIf="isConnected && joined" class="chat-container">
     <div class="chat-header">
       <h2>Room: {{ room }}</h2>
-      <button class="logout-btn" (click)="logout()">Logout</button>
+      <div class="header-actions">
+        <button
+          class="sound-toggle-btn"
+          (click)="toggleSound()"
+          title="Toggle sound notifications"
+        >
+          <span *ngIf="soundEnabled">🔊</span>
+          <span *ngIf="!soundEnabled">🔇</span>
+        </button>
+        <button
+          class="notification-toggle-btn"
+          (click)="toggleNotifications()"
+          title="Toggle browser notifications"
+        >
+          <span *ngIf="notificationsEnabled">🔔</span>
+          <span *ngIf="!notificationsEnabled">🔕</span>
+        </button>
+        <button class="logout-btn" (click)="logout()">Logout</button>
+      </div>
     </div>
 
     <div class="chat-layout">
@@ -34,8 +52,13 @@
               'own-message': msg.user === nickname
             }"
           >
-            <span class="user">{{ msg.user }}:</span>
-            <span class="text">{{ msg.text }}</span>
+            <div class="message-header">
+              <span class="user">{{ msg.user }}</span>
+              <span class="timestamp" *ngIf="msg.timestamp">
+                {{ formatTimestamp(msg.timestamp) }}
+              </span>
+            </div>
+            <div class="text">{{ msg.text }}</div>
           </div>
         </div>
 

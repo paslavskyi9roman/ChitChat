@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { SoundService } from '../services/sound.service';
+import { NotificationService } from '../services/notification.service';
 
 @Component({
   selector: 'app-chat',
@@ -21,12 +23,17 @@ export class ChatComponent implements OnInit, OnDestroy {
   users: string[] = [];
   joined = false;
   isConnected = false;
+  soundEnabled = true;
+  notificationsEnabled = false;
   private subscriptions: Subscription[] = [];
+  private windowFocused = true;
 
   constructor(
     private chatService: ChatService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private soundService: SoundService,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit() {
@@ -41,8 +48,14 @@ export class ChatComponent implements OnInit, OnDestroy {
 
     this.nickname = this.authService.getUsername();
     this.room = this.authService.getRoom();
+    this.soundEnabled = this.soundService.isSoundEnabled();
+    this.notificationsEnabled = this.notificationService.isEnabled();
 
     console.log('User authenticated as:', this.nickname, 'in room:', this.room);
+
+    // Track window focus for notifications
+    window.addEventListener('focus', this.onWindowFocus.bind(this));
+    window.addEventListener('blur', this.onWindowBlur.bind(this));
 
     // Subscribe to connection status
     this.subscriptions.push(
@@ -62,6 +75,27 @@ export class ChatComponent implements OnInit, OnDestroy {
       this.chatService.getMessages().subscribe((msg) => {
         console.log('Message received in component:', msg);
         this.messages.push(msg);
+
+        // Play sound if the message is from another user
+        if (msg.user !== this.nickname && this.soundEnabled) {
+          this.soundService.playMessageSound();
+        }
+
+        // Show notification if window is not focused and notifications are enabled
+        if (
+          msg.user !== this.nickname &&
+          !this.windowFocused &&
+          this.notificationsEnabled
+        ) {
+          this.notificationService.showNotification(
+            `New message from ${msg.user}`,
+            {
+              body: msg.text,
+              icon: 'assets/favicon.ico',
+              tag: 'chat-message',
+            }
+          );
+        }
       })
     );
 
@@ -69,7 +103,25 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.chatService.getSystemMessages().subscribe((msg) => {
         console.log('System message received in component:', msg);
-        this.messages.push({ user: 'System', text: msg });
+        this.messages.push({
+          user: 'System',
+          text: msg,
+          timestamp: new Date().getTime(),
+        });
+
+        // Play notification sound for system messages
+        if (this.soundEnabled) {
+          this.soundService.playNotificationSound();
+        }
+
+        // Show notification if window is not focused and notifications are enabled
+        if (!this.windowFocused && this.notificationsEnabled) {
+          this.notificationService.showNotification('System Notification', {
+            body: msg,
+            icon: 'assets/favicon.ico',
+            tag: 'system-message',
+          });
+        }
       })
     );
 
@@ -77,9 +129,54 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.chatService.getUsers().subscribe((users) => {
         console.log('User list received in component:', users);
+
+        // If the user list changed, play notification sound
+        if (this.users.length !== users.length && this.users.length > 0) {
+          // Play sound if enabled
+          if (this.soundEnabled) {
+            this.soundService.playNotificationSound();
+          }
+
+          // Show notification for users joining/leaving if window is not focused
+          if (!this.windowFocused && this.notificationsEnabled) {
+            const action = users.length > this.users.length ? 'joined' : 'left';
+            this.notificationService.showNotification(
+              `User ${action} the chat`,
+              {
+                body: `There are now ${users.length} users in the room`,
+                icon: 'assets/favicon.ico',
+                tag: 'user-update',
+              }
+            );
+          }
+        }
+
         this.users = users;
       })
     );
+  }
+
+  // Format timestamp to human-readable time
+  formatTimestamp(timestamp: number | Date): string {
+    if (!timestamp) return '';
+
+    let date: Date;
+    if (timestamp instanceof Date) {
+      date = timestamp;
+    } else {
+      date = new Date(timestamp);
+    }
+
+    // Return time in format HH:MM
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  private onWindowFocus() {
+    this.windowFocused = true;
+  }
+
+  private onWindowBlur() {
+    this.windowFocused = false;
   }
 
   joinChat() {
@@ -94,25 +191,50 @@ export class ChatComponent implements OnInit, OnDestroy {
     );
     // Unsubscribe from all subscriptions
     this.subscriptions.forEach((subscription) => subscription.unsubscribe());
+
+    // Remove window event listeners
+    window.removeEventListener('focus', this.onWindowFocus.bind(this));
+    window.removeEventListener('blur', this.onWindowBlur.bind(this));
   }
 
   sendMessage() {
-    if (this.message.trim()) {
-      console.log('Sending message:', this.message);
-      this.chatService.sendMessage(this.message);
-      // Add message to local messages immediately for better UX
-      this.messages.push({
-        user: this.nickname,
-        text: this.message,
-        timestamp: new Date(),
-      });
-      this.message = '';
+    if (!this.message.trim()) {
+      return;
     }
+
+    console.log('Sending message:', this.message);
+
+    // Send to server
+    this.chatService.sendMessage(this.message);
+
+    // Clear the input
+    this.message = '';
   }
 
   logout() {
     console.log('Logging out user');
     this.authService.logout();
     this.router.navigate(['/']);
+  }
+
+  toggleSound() {
+    this.soundEnabled = !this.soundEnabled;
+    this.soundService.toggleSounds(this.soundEnabled);
+  }
+
+  toggleNotifications() {
+    if (!this.notificationsEnabled) {
+      this.notificationService
+        .requestPermission()
+        .then((permission) => {
+          this.notificationsEnabled = permission === 'granted';
+        })
+        .catch((err) => {
+          console.error('Error requesting notification permission:', err);
+        });
+    } else {
+      this.notificationsEnabled = false;
+      this.notificationService.toggleNotifications(false);
+    }
   }
 }

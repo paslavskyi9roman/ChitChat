@@ -4,8 +4,8 @@ import { Injectable } from '@angular/core';
   providedIn: 'root',
 })
 export class SoundService {
-  private messageSound: HTMLAudioElement;
-  private notificationSound: HTMLAudioElement;
+  private messageSound!: HTMLAudioElement;
+  private notificationSound!: HTMLAudioElement;
   private enabled = true;
 
   constructor() {
