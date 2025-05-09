@@ -27,6 +27,7 @@
 
 .form-group {
   margin-bottom: 20px;
+  text-align: left;
 
   input {
     width: 100%;
@@ -41,6 +42,16 @@
       border-color: #4caf50;
       box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
     }
+
+    &.ng-invalid.ng-touched {
+      border-color: #f44336;
+    }
+  }
+
+  .error-text {
+    margin-top: 5px;
+    color: #f44336;
+    font-size: 12px;
   }
 }
 
@@ -69,4 +80,17 @@ button {
   color: #f44336;
   margin-bottom: 15px;
   font-size: 14px;
+  padding: 8px;
+  background-color: rgba(244, 67, 54, 0.1);
+  border-radius: 4px;
+}
+
+.debug-info {
+  margin-top: 20px;
+  text-align: left;
+  font-size: 12px;
+  color: #999;
+  padding: 10px;
+  border: 1px dashed #ddd;
+  border-radius: 4px;
 }

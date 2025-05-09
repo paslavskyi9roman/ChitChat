@@ -3,7 +3,7 @@
     <h1>ChitChat</h1>
     <p>Enter your details to join the chat</p>
 
-    <form (ngSubmit)="onSubmit()">
+    <div class="form">
       <div class="form-group">
         <label for="username">Username</label>
         <input
@@ -24,15 +24,17 @@
         </select>
       </div>
 
-      @if (errorMessage) {
-      <div class="error-message">
+      <div class="error-message" *ngIf="errorMessage">
         {{ errorMessage }}
       </div>
-      }
 
-      <button type="submit" [disabled]="username.invalid || room.invalid">
+      <button
+        type="button"
+        (click)="onSubmit()"
+        [disabled]="username.invalid || isSubmitting"
+      >
         Join Chat
       </button>
-    </form>
+    </div>
   </div>
 </div>

@@ -28,51 +28,56 @@ export class LoginComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    console.log('Login component initialized');
+
     // Redirect if already logged in
     if (this.authService.isLoggedIn()) {
+      console.log('User already logged in, redirecting to chat');
       this.router.navigate(['/chat']);
     }
 
     // Set username from localStorage if it exists
     const savedUsername = localStorage.getItem('username');
     if (savedUsername) {
+      console.log('Restoring saved username:', savedUsername);
       this.username.setValue(savedUsername);
     }
 
     // Set room from localStorage if it exists
     const savedRoom = localStorage.getItem('room');
     if (savedRoom) {
+      console.log('Restoring saved room:', savedRoom);
       this.room.setValue(savedRoom);
     }
   }
 
+  // Direct approach with simple login
   onSubmit(): void {
-    if (this.isSubmitting) {
-      return; // Prevent multiple submissions
-    }
+    console.log('Login button clicked');
 
-    if (this.username.valid && this.room.valid) {
-      this.isSubmitting = true;
-      const name = this.username.value as string;
-      const roomName = this.room.value as string;
-
-      console.log('Login submitted:', { name, roomName });
-
-      // Save credentials
-      this.authService.setCredentials(name, roomName);
-
-      // Connect to chat
-      this.chatService.joinRoom(name, roomName);
-
-      // Navigate to chat room after a small delay
-      setTimeout(() => {
-        this.isSubmitting = false;
-        console.log('Navigating to /chat');
-        this.router.navigate(['/chat']);
-      }, 500);
-    } else {
+    // Basic validation
+    if (!this.username.value || this.username.value.length < 3) {
       this.errorMessage =
         'Please enter a valid username (at least 3 characters)';
+      return;
     }
+
+    const name = this.username.value;
+    const roomName = this.room.value || 'general';
+
+    console.log('Login with:', { name, roomName });
+
+    // Directly manipulate localStorage
+    localStorage.setItem('username', name);
+    localStorage.setItem('room', roomName);
+
+    // Also update the service
+    this.authService.setCredentials(name, roomName);
+
+    // Connect to chat
+    this.chatService.joinRoom(name, roomName);
+
+    // Navigate to chat
+    this.router.navigate(['/chat']);
   }
 }

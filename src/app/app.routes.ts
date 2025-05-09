@@ -4,11 +4,22 @@ import { ChatComponent } from './chat/chat.component';
 import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
-  { path: '', component: LoginComponent },
+  {
+    path: '',
+    pathMatch: 'full',
+    component: LoginComponent,
+  },
+  {
+    path: 'login',
+    component: LoginComponent,
+  },
   {
     path: 'chat',
     component: ChatComponent,
     canActivate: [authGuard],
   },
-  { path: '**', redirectTo: '' },
+  {
+    path: '**',
+    redirectTo: '',
+  },
 ];
