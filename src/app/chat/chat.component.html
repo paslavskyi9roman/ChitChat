@@ -1,82 +1,103 @@
-<div class="container">
-  <div *ngIf="!isConnected" class="connection-error">
-    <p>Connecting to server...</p>
-    <div class="loading-spinner"></div>
+<div class="chat-root">
+  <div class="chat-header">
+    <div class="header-left">
+      <span
+        class="status-dot"
+        [ngClass]="{ online: isConnected, offline: !isConnected }"
+      ></span>
+      <span class="room-name"
+        >Room: <b>{{ room }}</b></span
+      >
+    </div>
+    <div class="header-actions">
+      <button
+        class="icon-btn"
+        (click)="toggleSound()"
+        [title]="soundEnabled ? 'Disable sound' : 'Enable sound'"
+      >
+        <span *ngIf="soundEnabled">🔊</span
+        ><span *ngIf="!soundEnabled">🔇</span>
+      </button>
+      <button
+        class="icon-btn"
+        (click)="toggleNotifications()"
+        [title]="
+          notificationsEnabled
+            ? 'Disable notifications'
+            : 'Enable notifications'
+        "
+      >
+        <span *ngIf="notificationsEnabled">🔔</span
+        ><span *ngIf="!notificationsEnabled">🔕</span>
+      </button>
+      <button class="logout-btn" (click)="logout()">Logout</button>
+    </div>
   </div>
 
-  <div *ngIf="isConnected && joined" class="chat-container">
-    <div class="chat-header">
-      <h2>Room: {{ room }}</h2>
-      <div class="header-actions">
-        <button
-          class="sound-toggle-btn"
-          (click)="toggleSound()"
-          title="Toggle sound notifications"
+  <div class="chat-main">
+    <aside class="chat-sidebar">
+      <h3>Users</h3>
+      <ul class="user-list">
+        <li *ngFor="let user of users" [ngClass]="{ self: user === nickname }">
+          <span class="avatar">{{ user.charAt(0) | uppercase }}</span>
+          <span class="user-name">{{ user }}</span>
+          <span *ngIf="user === nickname" class="you-label">(You)</span>
+        </li>
+        <li *ngIf="users.length === 0" class="empty-list">
+          No other users in this room
+        </li>
+      </ul>
+    </aside>
+
+    <section class="chat-content">
+      <div class="messages">
+        <div *ngIf="messages.length === 0" class="empty-chat-message">
+          <span>No messages yet. Start the conversation!</span>
+        </div>
+        <div
+          *ngFor="let msg of messages"
+          class="message-bubble"
+          [ngClass]="{
+            system: msg.user === 'System',
+            own: msg.user === nickname,
+            other: msg.user !== nickname && msg.user !== 'System'
+          }"
         >
-          <span *ngIf="soundEnabled">🔊</span>
-          <span *ngIf="!soundEnabled">🔇</span>
-        </button>
-        <button
-          class="notification-toggle-btn"
-          (click)="toggleNotifications()"
-          title="Toggle browser notifications"
-        >
-          <span *ngIf="notificationsEnabled">🔔</span>
-          <span *ngIf="!notificationsEnabled">🔕</span>
-        </button>
-        <button class="logout-btn" (click)="logout()">Logout</button>
-      </div>
-    </div>
-
-    <div class="chat-layout">
-      <div class="users-panel">
-        <h3>Users</h3>
-        <ul class="users-list">
-          <li *ngFor="let user of users">{{ user }}</li>
-          <li *ngIf="users.length === 0" class="empty-list">
-            No other users in this room
-          </li>
-        </ul>
-      </div>
-
-      <div class="chat-panel">
-        <div class="chat-window">
-          <div *ngIf="messages.length === 0" class="empty-chat-message">
-            No messages yet. Start the conversation!
+          <div class="bubble-header">
+            <span class="bubble-user" *ngIf="msg.user !== 'System'">{{
+              msg.user
+            }}</span>
+            <span class="bubble-timestamp" *ngIf="msg.timestamp">{{
+              formatTimestamp(msg.timestamp)
+            }}</span>
           </div>
-          <div
-            *ngFor="let msg of messages"
-            class="message"
-            [ngClass]="{
-              'system-message': msg.user === 'System',
-              'own-message': msg.user === nickname
-            }"
-          >
-            <div class="message-header">
-              <span class="user">{{ msg.user }}</span>
-              <span class="timestamp" *ngIf="msg.timestamp">
-                {{ formatTimestamp(msg.timestamp) }}
-              </span>
-            </div>
-            <div class="text">{{ msg.text }}</div>
-          </div>
-        </div>
-
-        <div class="typing-indicator" *ngIf="typingUsers.length > 0">
-          <span>{{ getTypingDisplay() }}</span>
-        </div>
-
-        <div class="message-input">
-          <input
-            [(ngModel)]="message"
-            (keydown.enter)="sendMessage()"
-            (input)="onInputChange()"
-            (keyup)="onKeyUp($event)"
-            placeholder="Type your message..."
-          />
-          <button (click)="sendMessage()">Send</button>
+          <div class="bubble-text">{{ msg.text }}</div>
         </div>
       </div>
-    </div>
+      <div class="typing-indicator" *ngIf="typingUsers.length > 0">
+        <span>{{ getTypingDisplay() }}</span>
+        <span class="typing-dots"><span></span><span></span><span></span></span>
+      </div>
+      <form
+        class="message-input-row"
+        (ngSubmit)="sendMessage()"
+        autocomplete="off"
+      >
+        <input
+          [(ngModel)]="message"
+          name="message"
+          (keydown.enter)="sendMessage()"
+          (input)="onInputChange()"
+          (keyup)="onKeyUp($event)"
+          placeholder="Type your message..."
+          [disabled]="!isConnected"
+          maxlength="500"
+          required
+        />
+        <button type="submit" [disabled]="!message.trim() || !isConnected">
+          Send
+        </button>
+      </form>
+    </section>
   </div>
 </div>
