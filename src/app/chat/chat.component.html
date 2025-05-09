@@ -1,0 +1,53 @@
+<div class="container">
+  <div *ngIf="!isConnected" class="connection-error">
+    <p>Connecting to server...</p>
+    <div class="loading-spinner"></div>
+  </div>
+
+  <div *ngIf="isConnected && joined" class="chat-container">
+    <div class="chat-header">
+      <h2>Room: {{ room }}</h2>
+      <button class="logout-btn" (click)="logout()">Logout</button>
+    </div>
+
+    <div class="chat-layout">
+      <div class="users-panel">
+        <h3>Users</h3>
+        <ul class="users-list">
+          <li *ngFor="let user of users">{{ user }}</li>
+          <li *ngIf="users.length === 0" class="empty-list">
+            No other users in this room
+          </li>
+        </ul>
+      </div>
+
+      <div class="chat-panel">
+        <div class="chat-window">
+          <div *ngIf="messages.length === 0" class="empty-chat-message">
+            No messages yet. Start the conversation!
+          </div>
+          <div
+            *ngFor="let msg of messages"
+            class="message"
+            [ngClass]="{
+              'system-message': msg.user === 'System',
+              'own-message': msg.user === nickname
+            }"
+          >
+            <span class="user">{{ msg.user }}:</span>
+            <span class="text">{{ msg.text }}</span>
+          </div>
+        </div>
+
+        <div class="message-input">
+          <input
+            [(ngModel)]="message"
+            (keydown.enter)="sendMessage()"
+            placeholder="Type your message..."
+          />
+          <button (click)="sendMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

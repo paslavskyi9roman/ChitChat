@@ -1,6 +1,46 @@
-# ChitChat
+# ChitChat - Real-Time Chat Application
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.11.
+A real-time chat application built with Angular and Socket.IO.
+
+## Features
+
+- Real-time messaging
+- Room-based chat system
+- User lists per room
+- System notifications
+
+## Prerequisites
+
+- Node.js and npm
+- Angular CLI
+- Socket.IO backend server running on http://localhost:3000
+
+## Getting Started
+
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Run the development server: `npm start`
+4. Open your browser and navigate to `http://localhost:4200`
+
+## Backend Server
+
+This frontend expects a Socket.IO server running at http://localhost:3000 with the following event handlers:
+
+- `join room`: When a user joins a chat room
+- `chat message`: For sending messages
+- `user list`: For updating the list of users in a room
+- `system message`: For system notifications
+
+## How to Use
+
+1. Enter your nickname and select a room
+2. Click "Join" to enter the chat
+3. Type messages and press Enter or click "Send" to send them
+4. View other users in the room in the users list
+
+## Development
+
+This project was generated with [Angular CLI](https://github.com/angular/angular-cli).
 
 ## Development server
 
