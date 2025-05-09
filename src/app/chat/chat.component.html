@@ -62,10 +62,16 @@
           </div>
         </div>
 
+        <div class="typing-indicator" *ngIf="typingUsers.length > 0">
+          <span>{{ getTypingDisplay() }}</span>
+        </div>
+
         <div class="message-input">
           <input
             [(ngModel)]="message"
             (keydown.enter)="sendMessage()"
+            (input)="onInputChange()"
+            (keyup)="onKeyUp($event)"
             placeholder="Type your message..."
           />
           <button (click)="sendMessage()">Send</button>

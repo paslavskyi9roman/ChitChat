@@ -21,12 +21,16 @@ export class ChatComponent implements OnInit, OnDestroy {
   message = '';
   messages: any[] = [];
   users: string[] = [];
+  typingUsers: string[] = [];
   joined = false;
   isConnected = false;
   soundEnabled = true;
   notificationsEnabled = false;
   private subscriptions: Subscription[] = [];
   private windowFocused = true;
+  private typingTimer: any;
+  private typingTimeout: any;
+  isTyping = false;
 
   constructor(
     private chatService: ChatService,
@@ -154,15 +158,46 @@ export class ChatComponent implements OnInit, OnDestroy {
         this.users = users;
       })
     );
+
+    // Subscribe to typing status updates
+    this.subscriptions.push(
+      this.chatService.getTypingStatus().subscribe((status) => {
+        console.log('Typing status received in component:', status);
+
+        // Filter out current user
+        if (status.user === this.nickname) {
+          console.log('Ignoring own typing status');
+          return;
+        }
+
+        if (status.isTyping) {
+          // Add user to typing list if not already there
+          if (!this.typingUsers.includes(status.user)) {
+            console.log(`Adding ${status.user} to typing users list`);
+            this.typingUsers.push(status.user);
+            console.log('Updated typing users list:', this.typingUsers);
+          }
+        } else {
+          // Remove user from typing list
+          console.log(`Removing ${status.user} from typing users list`);
+          this.typingUsers = this.typingUsers.filter(
+            (user) => user !== status.user
+          );
+          console.log('Updated typing users list:', this.typingUsers);
+        }
+      })
+    );
   }
 
   // Format timestamp to human-readable time
-  formatTimestamp(timestamp: number | Date): string {
+  formatTimestamp(timestamp: number | Date | string): string {
     if (!timestamp) return '';
 
     let date: Date;
     if (timestamp instanceof Date) {
       date = timestamp;
+    } else if (typeof timestamp === 'string') {
+      date = new Date(timestamp);
     } else {
       date = new Date(timestamp);
     }
@@ -195,6 +230,11 @@ export class ChatComponent implements OnInit, OnDestroy {
     // Remove window event listeners
     window.removeEventListener('focus', this.onWindowFocus.bind(this));
     window.removeEventListener('blur', this.onWindowBlur.bind(this));
+
+    // Clear any timers
+    if (this.typingTimer) {
+      clearTimeout(this.typingTimer);
+    }
   }
 
   sendMessage() {
@@ -209,6 +249,44 @@ export class ChatComponent implements OnInit, OnDestroy {
 
     // Clear the input
     this.message = '';
+  }
+
+  onInputChange() {
+    // Send typing indicator when user starts typing
+    console.log('User input detected, setting typing status to true');
+    this.chatService.setTypingStatus(true);
+  }
+
+  onKeyUp(event: any) {
+    if (!this.isTyping) {
+      this.chatService.typing();
+      this.isTyping = true;
+    }
+
+    // Clear timeout if it exists
+    if (this.typingTimeout) {
+      clearTimeout(this.typingTimeout);
+    }
+
+    // Set a new timeout to stop typing after 1 second of inactivity
+    this.typingTimeout = setTimeout(() => {
+      this.chatService.stopTyping();
+      this.isTyping = false;
+    }, 1000);
+  }
+
+  getTypingDisplay(): string {
+    const count = this.typingUsers.length;
+
+    if (count === 0) {
+      return '';
+    } else if (count === 1) {
+      return `${this.typingUsers[0]} is typing...`;
+    } else if (count === 2) {
+      return `${this.typingUsers[0]} and ${this.typingUsers[1]} are typing...`;
+    } else {
+      return `${count} people are typing...`;
+    }
   }
 
   logout() {

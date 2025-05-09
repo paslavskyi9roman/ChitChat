@@ -9,6 +9,11 @@ interface ChatMessage {
   timestamp: number;
 }
 
+interface TypingStatus {
+  user: string;
+  isTyping: boolean;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -19,8 +24,10 @@ export class ChatService {
   private messagesSubject = new Subject<ChatMessage>();
   private systemMessagesSubject = new Subject<string>();
   private usersListSubject = new Subject<string[]>();
+  private typingStatusSubject = new Subject<TypingStatus>();
   private currentRoom: string = '';
   private currentUser: string = '';
+  private typingTimeout: any;
 
   // Cache to prevent duplicate messages
   private processedMessageIds = new Set<string>();
@@ -127,6 +134,22 @@ export class ChatService {
 
     this.socket.on('user list', userHandler);
     this.socket.on('users', userHandler);
+
+    // Typing status
+    this.socket.on('typing status', (status: TypingStatus) => {
+      console.log('Typing status received:', status);
+
+      // Make sure the status is in the expected format
+      if (
+        typeof status === 'object' &&
+        'user' in status &&
+        'isTyping' in status
+      ) {
+        this.typingStatusSubject.next(status);
+      } else {
+        console.error('Received malformed typing status:', status);
+      }
+    });
   }
 
   // Force reconnection if needed
@@ -184,6 +207,47 @@ export class ChatService {
       username: this.currentUser, // For compatibility
       timestamp: timestamp,
     });
+
+    // Also set typing to false when sending a message
+    this.setTypingStatus(false);
+  }
+
+  setTypingStatus(isTyping: boolean) {
+    // Clear any existing timeout
+    if (this.typingTimeout) {
+      clearTimeout(this.typingTimeout);
+    }
+
+    console.log(
+      `Setting typing status to ${isTyping} for user ${this.currentUser}`
+    );
+
+    if (!this.socket || !this.socket.connected) {
+      console.error('Cannot send typing status: socket not connected');
+      return;
+    }
+
+    // Send typing status to server - ensure we send EXACTLY what the server expects
+    this.socket.emit('typing', isTyping);
+
+    // Log debug info
+    console.log(`Emitted 'typing' event to server with status: ${isTyping}`);
+
+    // If user is typing, automatically reset after 3 seconds of inactivity
+    if (isTyping) {
+      this.typingTimeout = setTimeout(() => {
+        console.log('Typing timeout expired, setting typing status to false');
+        this.socket.emit('typing', false);
+      }, 3000);
+    }
+  }
+
+  typing() {
+    this.setTypingStatus(true);
+  }
+
+  stopTyping() {
+    this.setTypingStatus(false);
   }
 
   getMessages(): Observable<ChatMessage> {
@@ -196,5 +260,9 @@ export class ChatService {
 
   getUsers(): Observable<string[]> {
     return this.usersListSubject.asObservable();
+  }
+
+  getTypingStatus(): Observable<TypingStatus> {
+    return this.typingStatusSubject.asObservable();
   }
 }

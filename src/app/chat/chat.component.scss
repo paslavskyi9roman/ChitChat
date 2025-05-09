@@ -282,3 +282,25 @@ button {
     padding: 0 20px;
   }
 }
+
+.typing-indicator {
+  font-style: italic;
+  color: #6c757d;
+  font-size: 0.9rem;
+  padding: 5px 15px;
+  position: relative;
+  animation: pulse 1.5s infinite;
+  margin-bottom: 5px;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.5;
+  }
+}
