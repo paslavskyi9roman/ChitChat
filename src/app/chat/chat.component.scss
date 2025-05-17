@@ -1,21 +1,5 @@
 @use "sass:color";
-
-$primary: #2563eb;
-$primary-light: #3b82f6;
-$primary-dark: #1e40af;
-$background: #f3f4f6;
-$sidebar-bg: #f9fafb;
-$header-bg: #fff;
-$border: #e5e7eb;
-$text: #1e293b;
-$text-light: #64748b;
-$system: #f59e42;
-$own-bg: #dbeafe;
-$other-bg: #f1f5f9;
-$system-bg: #fef3c7;
-$shadow: 0 2px 8px rgba(30, 41, 59, 0.06);
-$radius: 12px;
-$font-stack: "Inter", "Roboto", "Segoe UI", Arial, sans-serif;
+@import "../styles/shared-variables";
 
 .chat-root {
   font-family: $font-stack;
@@ -58,7 +42,7 @@ $font-stack: "Inter", "Roboto", "Segoe UI", Arial, sans-serif;
       background: #22c55e;
     }
     &.offline {
-      background: #f43f5e;
+      background: $error;
     }
     box-shadow: 0 0 0 2px $header-bg;
   }
@@ -81,19 +65,9 @@ $font-stack: "Inter", "Roboto", "Segoe UI", Arial, sans-serif;
       }
     }
     .logout-btn {
-      background: $primary;
-      color: #fff;
-      border: none;
-      border-radius: $radius;
+      @include button-primary;
       padding: 0.4rem 1.1rem;
-      font-weight: 500;
       margin-left: 0.5rem;
-      cursor: pointer;
-      transition: background 0.15s;
-      &:hover,
-      &:focus {
-        background: $primary-dark;
-      }
     }
   }
 }
@@ -283,11 +257,9 @@ $font-stack: "Inter", "Roboto", "Segoe UI", Arial, sans-serif;
     align-items: center;
     gap: 0.7rem;
     margin-top: 0.7rem;
-    background: #fff;
-    border-radius: $radius;
-    box-shadow: 0 1px 4px rgba(30, 41, 59, 0.04);
-    padding: 0.5rem 0.7rem 0.5rem 1rem;
+    @include card;
     border: 1px solid $border;
+    padding: 0.5rem 0.7rem 0.5rem 1rem;
     input {
       flex: 1;
       border: none;
@@ -305,30 +277,15 @@ $font-stack: "Inter", "Roboto", "Segoe UI", Arial, sans-serif;
       }
     }
     button {
-      background: $primary;
-      color: #fff;
-      border: none;
-      border-radius: $radius;
+      @include button-primary;
       padding: 0.45rem 1.3rem;
       font-size: 1.08rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.15s;
-      &:hover,
-      &:focus {
-        background: $primary-dark;
-      }
-      &:disabled {
-        background: $border;
-        color: $text-light;
-        cursor: not-allowed;
-      }
     }
   }
 }
 
 // Responsive styles
-@media (max-width: 900px) {
+@media (max-width: $breakpoint-md) {
   .chat-main {
     flex-direction: column;
   }
@@ -346,7 +303,7 @@ $font-stack: "Inter", "Roboto", "Segoe UI", Arial, sans-serif;
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: $breakpoint-sm) {
   .chat-header {
     flex-direction: column;
     align-items: flex-start;

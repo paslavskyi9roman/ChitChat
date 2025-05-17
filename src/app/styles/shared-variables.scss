@@ -1,0 +1,88 @@
+// Shared color variables
+$primary: #2563eb;
+$primary-light: #3b82f6;
+$primary-dark: #1e40af;
+$background: #f3f4f6;
+$sidebar-bg: #f9fafb;
+$header-bg: #fff;
+$border: #e5e7eb;
+$text: #1e293b;
+$text-light: #64748b;
+$system: #f59e42;
+$own-bg: #dbeafe;
+$other-bg: #f1f5f9;
+$system-bg: #fef3c7;
+$error: #f43f5e;
+$error-light: #fef2f2;
+
+// Shared layout variables
+$shadow: 0 2px 8px rgba(30, 41, 59, 0.06);
+$radius: 12px;
+$font-stack: "Inter", "Roboto", "Segoe UI", Arial, sans-serif;
+
+// Common button styling
+@mixin button-primary {
+  background-color: $primary;
+  color: #fff;
+  border: none;
+  border-radius: $radius;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+
+  &:hover,
+  &:focus {
+    background-color: $primary-dark;
+  }
+
+  &:disabled {
+    background-color: $border;
+    color: $text-light;
+    cursor: not-allowed;
+  }
+}
+
+// Common form input styling
+@mixin form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid $border;
+  border-radius: $radius;
+  font-size: 1rem;
+  font-family: $font-stack;
+  background-color: $sidebar-bg;
+  color: $text;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: $primary-light;
+    box-shadow: 0 0 0 2px rgba($primary-light, 0.2);
+  }
+
+  &.ng-invalid.ng-touched {
+    border-color: $error;
+  }
+}
+
+// Common error message styling
+@mixin error-message {
+  color: $error;
+  font-size: 0.9rem;
+  padding: 0.75rem;
+  background-color: $error-light;
+  border-radius: $radius;
+  border-left: 3px solid $error;
+  text-align: left;
+}
+
+// Card styling
+@mixin card {
+  background-color: $header-bg;
+  border-radius: $radius;
+  box-shadow: $shadow;
+}
+
+// Responsive breakpoints
+$breakpoint-md: 900px;
+$breakpoint-sm: 600px;
